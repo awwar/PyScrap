@@ -17,37 +17,49 @@ class CFfetch(BaseParser):
         self.dom = None
         self.url = None
         self.cut = None
+        self.nvalue = None
 
     def run(self, url):
         self.url = url
-        self.cut = cut
         self.dom = self.__getcontent(self.url)
-        selected = {}
-        for instance in self.rules:
-            try:
-                executor = instance.exequtor
-                selected.update(executor.run(self.dom, *instance.args, **instance.kvargs))
-            except Exception as e:
-                self.selected = None
-                return
-        self.selected = [selected]
+        try:
+            self.selected = [self.__forRule(self.dom, self.rules)]
+        except:
+            return None
         return self.selected
 
-    def walk(self, url, cs=None, xs=None, re=None, fun=None, baseaddr=None, limit=None):
+    def gonext(self, url, cs=None, xs=None, re=None, fun=None, baseaddr=None, limit=None):
         self.url = url
         selected = []
         for href in self.iterate_url(self.url, cs, xs, re, fun, baseaddr, limit):
             self.dom = self.__getcontent(href)
-            data = {}
-            for instance in self.rules:
-                try:
-                    executor = instance.exequtor
-                    data.update(executor.run(self.dom, *instance.args, **instance.kvargs))
-                except Exception as e:
-                    self.selected = None
-                    return
-            selected.append(data)
+            try:
+                selected.append(self.__forRule(self.dom, self.rules))
+            except:
+                return None
         return selected
+
+    def walkOuter(self, url, cs=None, xs=None, re=None, fun=None, baseaddr=None, limit=None):
+        selected = []
+        for href in self.iterate_url(url, cs, xs, re, fun, baseaddr, limit):
+            dom = self.__getcontent(href)
+            try:
+                hrefs = self.__forRule(dom, self.rules)
+            except:
+                return None
+        return selected
+
+    @rule
+    def gocs(self, name, selector, handler=None):
+        return self.cssselector.make(name, selector, handler)
+
+    @rule
+    def goxs(self, name, selector, handler=None):
+        return self.xpathselector.make(name, selector, handler)
+
+    @rule
+    def gore(self, name, selector, handler=None):
+        return self.reselector.make(name, selector, handler)
 
     def iterate_url(self, url, cs=None, xs=None, re=None, handler=None, baseaddr=None, limit=None):
         yield url
@@ -56,17 +68,17 @@ class CFfetch(BaseParser):
                 limit -= 1
             try:
                 if re is not None:
-                    data = self.reselector.run(self.dom, '_', re, handler)
+                    data = self.reselector.run(self.dom, '_url', re, handler)
                 elif xs is not None:
-                    data = self.xpathselector.run(self.dom, '_', xs, handler)
+                    data = self.xpathselector.run(self.dom, '_url', xs, handler)
                 elif cs is not None:
-                    data = self.cssselector.run(self.dom, '_', cs, handler)
+                    data = self.cssselector.run(self.dom, '_url', cs, handler)
                 else:
                     break
             except:
                 data = None
 
-            data = data.get('_')
+            data = data.get('_url')
 
             if not data or data is None:
                 break
@@ -85,6 +97,16 @@ class CFfetch(BaseParser):
                 break
             url = href
 
+    def __forRule(self, dom, rules):
+        data = {}
+        for instance in rules:
+            try:
+                executor = instance.exequtor
+                data.update(executor.run(dom, *instance.args, **instance.kvargs))
+            except Exception as e:
+                raise Exception('')
+        return data
+
     def __getcontent(self, url):
         self.stop = False
         self.selected = {}
@@ -100,15 +122,3 @@ class CFfetch(BaseParser):
             if self.dom:
                 self.dom = self.dom[0]
         return self.dom
-
-    @rule
-    def gocs(self, name, selector, handler=None):
-        return self.cssselector.make(name, selector, handler)
-
-    @rule
-    def goxs(self, name, selector, handler=None):
-        return self.xpathselector.make(name, selector, handler)
-
-    @rule
-    def gore(self, name, selector, handler=None):
-        return self.reselector.make(name, selector, handler)
