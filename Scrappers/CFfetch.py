@@ -25,19 +25,19 @@ class CFfetch(BaseParser):
         try:
             self.selected = [self.__forRule(self.dom, self.rules)]
         except:
-            return None
+            return []
         return self.selected
 
     def gonext(self, url, cs=None, xs=None, re=None, fun=None, baseaddr=None, limit=None):
         self.url = url
-        selected = []
+        self.selected = []
         for href in self.iterate_url(self.url, cs, xs, re, fun, baseaddr, limit):
             self.dom = self.__getcontent(href)
             try:
-                selected.append(self.__forRule(self.dom, self.rules))
-            except:
-                return None
-        return selected
+                self.selected.append(self.__forRule(self.dom, self.rules))
+            except Exception as e:
+                return []
+        return self.selected
 
     def walkOuter(self, url, cs=None, xs=None, re=None, fun=None, baseaddr=None, limit=None):
         selected = []
@@ -46,8 +46,8 @@ class CFfetch(BaseParser):
             try:
                 hrefs = self.__forRule(dom, self.rules)
             except:
-                return None
-        return selected
+                return []
+        return self.selected
 
     @rule
     def gocs(self, name, selector, handler=None):
@@ -85,11 +85,16 @@ class CFfetch(BaseParser):
             if len(data) > 0:
                 data = data[0]
 
-            if not data or not isinstance(data, str) or len(data) < 1:
+            if not data or data is None:
                 break
 
+            if (isinstance(data, str)) and len(data) < 1:
+                break
+
+            data = str(data)
+
             if baseaddr is not None:
-                href = baseaddr % data
+                href = baseaddr.format(data)
             else:
                 href = data
             yield href
@@ -109,7 +114,6 @@ class CFfetch(BaseParser):
 
     def __getcontent(self, url):
         self.stop = False
-        self.selected = {}
         get = self.scraper.get(url).content
         # get = urllib2.urlopen(url).read()
         self.dom = html.fromstring(get)

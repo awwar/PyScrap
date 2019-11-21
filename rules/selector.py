@@ -1,6 +1,6 @@
 from lxml import html
 import re
-
+from collections import Iterable
 
 class Rule:
     def __init__(self, exequtor, *args, **kvargs):
@@ -24,8 +24,11 @@ class Selector:
         return var or var is not None
 
     def toList(self, var):
-        if not isinstance(var, list):
+        try:
+            iter(var)
+        except TypeError:
             var = [var]
+
         return var
 
     def setDefault(self, var):
@@ -51,7 +54,7 @@ class Selector:
                 try:
                     new_selected.append(handler(select))
                 except Exception as e:
-                    print e
+                    print(e)
             selected = new_selected
 
         if not self.notEmpty(selected):
@@ -85,5 +88,5 @@ class RregularExpressionSelector(Selector):
     def run(self, dom, key, selector, handler):
         prog = re.compile(selector)
         text = html.tostring(dom)
-        selected = prog.search(text)
+        selected = prog.finditer(text, re.MULTILINE)
         return self.after(key, selected, handler)
