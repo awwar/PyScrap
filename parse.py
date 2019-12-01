@@ -1,3 +1,4 @@
+# coding=utf-8
 def rule(function):
     def wrapper(self, *args, **kvargs):
         self.rules.append(function(self, *args, **kvargs))

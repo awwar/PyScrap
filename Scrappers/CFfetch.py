@@ -1,6 +1,7 @@
+# coding=utf-8
 from lxml import html
 import cfscrape
-import re
+import time
 from rules.selector import CSSSelection, XPATHSelector, RregularExpressionSelector
 from parse import BaseParser, rule
 
@@ -21,32 +22,33 @@ class CFfetch(BaseParser):
 
     def run(self, url):
         self.url = url
-        self.dom = self.__getcontent(self.url)
         try:
+            self.dom = self.__getcontent(self.url)
             self.selected = [self.__forRule(self.dom, self.rules)]
         except:
-            return []
+            return self.selected
         return self.selected
 
     def gonext(self, url, cs=None, xs=None, re=None, fun=None, baseaddr=None, limit=None):
         self.url = url
         self.selected = []
         for href in self.iterate_url(self.url, cs, xs, re, fun, baseaddr, limit):
-            self.dom = self.__getcontent(href)
             try:
+                self.dom = self.__getcontent(href)
                 self.selected.append(self.__forRule(self.dom, self.rules))
             except Exception as e:
-                return []
+                return self.selected
+            time.sleep(1)
         return self.selected
 
     def walkOuter(self, url, cs=None, xs=None, re=None, fun=None, baseaddr=None, limit=None):
         selected = []
         for href in self.iterate_url(url, cs, xs, re, fun, baseaddr, limit):
-            dom = self.__getcontent(href)
             try:
+                dom = self.__getcontent(href)
                 hrefs = self.__forRule(dom, self.rules)
             except:
-                return []
+                return self.selected
         return self.selected
 
     @rule
@@ -115,7 +117,6 @@ class CFfetch(BaseParser):
     def __getcontent(self, url):
         self.stop = False
         get = self.scraper.get(url).content
-        # get = urllib2.urlopen(url).read()
         self.dom = html.fromstring(get)
 
         if (isinstance(self.dom, list)) and len(self.dom) > 0:

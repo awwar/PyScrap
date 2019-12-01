@@ -1,3 +1,4 @@
+# coding=utf-8
 from lxml import html
 import re
 from collections import Iterable
@@ -87,6 +88,6 @@ class RregularExpressionSelector(Selector):
 
     def run(self, dom, key, selector, handler):
         prog = re.compile(selector)
-        text = html.tostring(dom)
+        text = html.tostring(dom, encoding='UTF-8')
         selected = prog.finditer(text, re.MULTILINE)
         return self.after(key, selected, handler)
