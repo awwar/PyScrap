@@ -96,7 +96,7 @@ class CFfetch(BaseParser):
 
     def __getcontent(self, url):
         self.stop = False
-        get = self.scraper.get(url).content
+        get = self.scraper.get(url).content.decode('utf-8')
         self.dom = html.fromstring(get)
 
         if (isinstance(self.dom, list)) and len(self.dom) > 0:

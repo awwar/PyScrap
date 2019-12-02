@@ -4,6 +4,7 @@ import re
 from lxml import html
 
 from baserule import *
+from utility.DomElement import Element
 
 
 class Selector(RuleExecutor):
@@ -70,6 +71,7 @@ class CSSSelection(Selector):
 
     def run(self, data, dom, *args, **kvargs):
         selected = dom.cssselect(args[1])
+        selected = [Element(select) for select in selected]
         data.update(self.after(args[0], selected, args[2]))
 
 
@@ -77,6 +79,7 @@ class XPATHSelector(Selector):
 
     def run(self, data, dom, *args, **kvargs):
         selected = dom.xpath(args[1])
+        selected = [Element(select) for select in selected]
         data.update(self.after(args[0], selected, args[2]))
 
 
