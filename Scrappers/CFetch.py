@@ -8,7 +8,7 @@ from rules.selector import CSSSelection, XPATHSelector, RregularExpressionSelect
 from scrappers.parse import BaseParser, rule
 
 
-class CFfetch(BaseParser):
+class CFetch(BaseParser):
 
     def __init__(self, settings=None):
         BaseParser.__init__(self)
