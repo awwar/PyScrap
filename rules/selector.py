@@ -1,16 +1,12 @@
 # coding=utf-8
-from lxml import html
 import re
-from collections import Iterable
 
-class Rule:
-    def __init__(self, exequtor, *args, **kvargs):
-        self.exequtor = exequtor
-        self.args = args
-        self.kvargs = kvargs
+from lxml import html
+
+from baserule import *
 
 
-class Selector:
+class Selector(RuleExecutor):
     def __init__(self, settings):
         self.required = []
         self.default = {}
@@ -72,22 +68,22 @@ class Selector:
 
 class CSSSelection(Selector):
 
-    def run(self, dom, key, selector, handler):
-        selected = dom.cssselect(selector)
-        return self.after(key, selected, handler)
+    def run(self, data, dom, *args, **kvargs):
+        selected = dom.cssselect(args[1])
+        data.update(self.after(args[0], selected, args[2]))
 
 
 class XPATHSelector(Selector):
 
-    def run(self, dom, key, selector, handler):
-        selected = dom.xpath(selector)
-        return self.after(key, selected, handler)
+    def run(self, data, dom, *args, **kvargs):
+        selected = dom.xpath(args[1])
+        data.update(self.after(args[0], selected, args[2]))
 
 
 class RregularExpressionSelector(Selector):
 
-    def run(self, dom, key, selector, handler):
-        prog = re.compile(selector)
+    def run(self, data, dom, *args, **kvargs):
+        prog = re.compile(args[1])
         text = html.tostring(dom, encoding='UTF-8')
         selected = prog.finditer(text, re.MULTILINE)
-        return self.after(key, selected, handler)
+        data.update(self.after(args[0], selected, args[2]))

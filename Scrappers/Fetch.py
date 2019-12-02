@@ -1,8 +1,10 @@
-from json_mapper.mapper import map_json2
-from requests import Request, Session
-from requests.exceptions import ConnectionError, Timeout, TooManyRedirects
 import json
-from parse import BaseParser
+
+from json_mapper.mapper import map_json2
+from requests import Session
+from requests.exceptions import ConnectionError, Timeout, TooManyRedirects
+
+from scrappers.parse import BaseParser
 
 
 class Api(BaseParser):

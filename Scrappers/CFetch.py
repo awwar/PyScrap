@@ -1,55 +1,36 @@
 # coding=utf-8
-from lxml import html
-import cfscrape
 import time
+
+import cfscrape
+from lxml import html
+
 from rules.selector import CSSSelection, XPATHSelector, RregularExpressionSelector
-from parse import BaseParser, rule
+from scrappers.parse import BaseParser, rule
 
 
 class CFfetch(BaseParser):
 
     def __init__(self, settings=None):
         BaseParser.__init__(self)
-        self.selected = {}
         self.cssselector = CSSSelection(settings)
         self.xpathselector = XPATHSelector(settings)
         self.reselector = RregularExpressionSelector(settings)
         self.scraper = cfscrape.create_scraper()
         self.dom = None
-        self.url = None
-        self.cut = None
-        self.nvalue = None
 
     def run(self, url):
-        self.url = url
-        try:
-            self.dom = self.__getcontent(self.url)
-            self.selected = [self.__forRule(self.dom, self.rules)]
-        except:
-            return self.selected
+        self.selected.append(self.__getcontent(url))
         return self.selected
 
     def gonext(self, url, cs=None, xs=None, re=None, fun=None, baseaddr=None, limit=None):
-        self.url = url
         self.selected = []
-        for href in self.iterate_url(self.url, cs, xs, re, fun, baseaddr, limit):
-            try:
-                self.dom = self.__getcontent(href)
-                self.selected.append(self.__forRule(self.dom, self.rules))
-            except Exception as e:
-                return self.selected
+        for href in self.__iterate_url(url, cs, xs, re, fun, baseaddr, limit):
+            self.selected.append(self.__getcontent(href))
             time.sleep(1)
         return self.selected
 
     def walkOuter(self, url, cs=None, xs=None, re=None, fun=None, baseaddr=None, limit=None):
-        selected = []
-        for href in self.iterate_url(url, cs, xs, re, fun, baseaddr, limit):
-            try:
-                dom = self.__getcontent(href)
-                hrefs = self.__forRule(dom, self.rules)
-            except:
-                return self.selected
-        return self.selected
+        pass
 
     @rule
     def gocs(self, name, selector, handler=None):
@@ -63,7 +44,7 @@ class CFfetch(BaseParser):
     def gore(self, name, selector, handler=None):
         return self.reselector.make(name, selector, handler)
 
-    def iterate_url(self, url, cs=None, xs=None, re=None, handler=None, baseaddr=None, limit=None):
+    def __iterate_url(self, url, cs=None, xs=None, re=None, handler=None, baseaddr=None, limit=None):
         yield url
         while True:
             if limit is not None:
@@ -104,12 +85,11 @@ class CFfetch(BaseParser):
                 break
             url = href
 
-    def __forRule(self, dom, rules):
+    def __forRule(self):
         data = {}
-        for instance in rules:
+        for instance in self.rules:
             try:
-                executor = instance.exequtor
-                data.update(executor.run(dom, *instance.args, **instance.kvargs))
+                instance.exequtor.run(data, self.dom, *instance.args, **instance.kvargs)
             except Exception as e:
                 raise Exception('')
         return data
@@ -122,8 +102,11 @@ class CFfetch(BaseParser):
         if (isinstance(self.dom, list)) and len(self.dom) > 0:
             self.dom = self.dom[0]
 
-        if self.cut is not None:
-            self.dom = self.dom.cssselect(self.cut)
-            if self.dom:
-                self.dom = self.dom[0]
-        return self.dom
+        content = []
+
+        try:
+            content = self.__forRule()
+        except:
+            pass
+
+        return content
