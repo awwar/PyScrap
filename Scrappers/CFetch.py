@@ -6,6 +6,7 @@ from lxml import html
 
 from rules.selector import CSSSelection, XPATHSelector, RregularExpressionSelector
 from scrappers.parse import BaseParser, rule
+from utility.Arguments import GonextArguments, WalkouterArguments
 
 
 class CFetch(BaseParser):
@@ -18,19 +19,26 @@ class CFetch(BaseParser):
         self.fetcher = cfscrape.create_scraper()
 
     def run(self, url):
-        rez = self.__getcontent(url)
+        self.dom = self.__getdom(url)
+        rez = self.__getcontent(self.dom)
         if rez is not None:
             self.selected.append(rez)
         return self.selected
 
-    def gonext(self, url, cs=None, xs=None, re=None, fun=None, baseaddr=None, limit=None):
-        self.selected = []
-        for href in self.__iterate_url(url, cs, xs, re, fun, baseaddr, limit):
+    def gonext(self, **kvargs):
+        for href in self.__iterate_url(GonextArguments(kvargs)):
             self.run(href)
         return self.selected
 
-    def walkOuter(self, url, cs=None, xs=None, re=None, fun=None, baseaddr=None, limit=None):
-        pass
+    def walkOuter(self, **kvargs):
+        aargs = WalkouterArguments(kvargs)
+        for hrefs in self.__iterate_url(aargs):
+            dom = self.__getdom(hrefs)
+            data = self.__geturl(dom, aargs.are, aargs.axs, aargs.acs, aargs.ahandler, False)
+            for href in data:
+                self.run(aargs.baseaddr.format(href))
+            self.dom = dom
+        return self.selected
 
     @rule
     def gocs(self, name, selector, handler=lambda o: o):
@@ -44,69 +52,82 @@ class CFetch(BaseParser):
     def gore(self, name, selector, handler=lambda o: o):
         return self.reselectorrule.make(name, selector, handler)
 
-    def __iterate_url(self, url, cs=None, xs=None, re=None, handler=None, baseaddr=None, limit=None):
+    def __iterate_url(self, args):
+        url = args.url
         yield url
         while True:
-            if limit is not None:
-                limit -= 1
+            if args.limit is not None:
+                args.limit -= 1
             try:
-                if re is not None:
-                    data = self.reselectorrule.run(self.dom, '_url', re, handler)
-                elif xs is not None:
-                    data = self.xpathselectorrule.run(self.dom, '_url', xs, handler)
-                elif cs is not None:
-                    data = self.cssselectorrule.run(self.dom, '_url', cs, handler)
-                else:
-                    break
+                data = self.__geturl(self.dom, args.re, args.xs, args.cs, args.handler)
             except:
-                data = None
-
-            data = data.get('_url')
-                
-            if (isinstance(data, list)) and len(data) > 0:
-                data = data[0]
-
-            if not data or data is None:
                 break
 
-            data = str(data)
-
-            if (isinstance(data, str)) and len(data) < 1:
-                break
-
-            if baseaddr is not None:
-                href = baseaddr.format(data)
+            if args.baseaddr is not None:
+                href = args.baseaddr.format(data)
             else:
                 href = data
             yield href
 
-            time.sleep(1)
-
-            if limit == 0:
+            if args.limit == 0:
                 break
             url = href
 
-    def __forRule(self):
+    def __forRule(self, dom):
         data = {}
         for instance in self.rules:
             try:
-                instance.exequtor.run(data, self.dom, *instance.args, **instance.kvargs)
+                instance.exequtor.run(data, dom, *instance.args, **instance.kvargs)
             except Exception as e:
                 raise Exception('')
         return data
 
-    def __getcontent(self, url):
+    def __getdom(self, url):
         get = self.fetcher.get(url).content.decode('utf-8')
-        self.dom = html.fromstring(get)
+        dom = html.fromstring(get)
 
-        if (isinstance(self.dom, list)) and len(self.dom) > 0:
-            self.dom = self.dom[0]
+        if (isinstance(dom, list)) and len(dom) > 0:
+            dom = dom[0]
 
+        time.sleep(1)
+        return dom
+
+    def __getcontent(self, dom):
         content = None
 
         try:
-            content = self.__forRule()
+            content = self.__forRule(dom)
         except:
             pass
 
         return content
+
+    def __geturl(self, dom, re, xs, cs, handler, limitation=True):
+        data = {}
+        try:
+            if re:
+                self.reselectorrule.run(data, dom, '_url', re, handler)
+            elif xs:
+                self.xpathselectorrule.run(data, dom, '_url', xs, handler)
+            elif cs:
+                self.cssselectorrule.run(data, dom, '_url', cs, handler)
+            else:
+                raise Exception
+        except Exception as e:
+            pass
+
+        data = data.get('_url')
+
+        if limitation:
+            if (isinstance(data, list)) and len(data) > 0:
+                data = data[0]
+
+                data = str(data)
+
+                if not data or data is None:
+                    raise Exception
+
+        if (isinstance(data, str)) and len(data) < 1:
+            raise Exception
+
+        return data
