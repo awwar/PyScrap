@@ -9,6 +9,9 @@ class Rule:
 
 
 class RuleExecutor:
+    def __init__(self):
+        pass
+
     def make(self, *args, **kvargs):
         return Rule(self, *args, **kvargs)
 

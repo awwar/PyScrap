@@ -9,6 +9,7 @@ from utility.DomElement import Element
 
 class Selector(RuleExecutor):
     def __init__(self, settings):
+        RuleExecutor.__init__(self)
         self.required = []
         self.default = {}
         if self.notEmpty(settings) and isinstance(settings, dict):
@@ -19,7 +20,7 @@ class Selector(RuleExecutor):
                     self.setRequired(value)
 
     def notEmpty(self, var):
-        return var or var is not None
+        return True if (var and var is not None) else False
 
     def toList(self, var):
         try:
@@ -54,7 +55,6 @@ class Selector(RuleExecutor):
                 except Exception as e:
                     print(e)
             selected = new_selected
-
         if not self.notEmpty(selected):
             try:
                 selected = self.default[key]

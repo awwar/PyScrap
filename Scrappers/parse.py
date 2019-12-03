@@ -15,7 +15,9 @@ class BaseParser:
     def __init__(self):
         self.rules = []
         self.stop = False
+        self.dom = False
         self.selected = []
+        self.fetcher = None
         self.rememberrule = RememberRule()
         self.remaprule = RemapRule()
 

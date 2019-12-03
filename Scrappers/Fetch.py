@@ -10,6 +10,7 @@ from scrappers.parse import BaseParser
 class Api(BaseParser):
 
     def __init__(self, api, setting):
+        BaseParser.__init__(self)
         self.selected = {}
         self.url = api
         self.session = Session()
