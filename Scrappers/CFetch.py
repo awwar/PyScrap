@@ -116,7 +116,7 @@ class CFetch(BaseParser):
         except Exception as e:
             pass
 
-        data = data.get('_url')
+        data = data.get('_url', [])
 
         if limitation:
             if (isinstance(data, list)) and len(data) > 0:
@@ -124,8 +124,8 @@ class CFetch(BaseParser):
 
                 data = str(data)
 
-                if not data or data is None:
-                    raise Exception
+            if not data or data is None:
+                raise Exception
 
         if (isinstance(data, str)) and len(data) < 1:
             raise Exception
